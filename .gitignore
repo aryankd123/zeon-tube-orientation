@@ -1,0 +1,11 @@
+# Ignore dataset and weights
+dataset/
+split_dataset_v2/
+runs/
+*.zip
+*.pt
+
+# Python caches
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
