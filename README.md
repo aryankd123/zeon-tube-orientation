@@ -1,40 +1,39 @@
-# 🧪 Tube Orientation Detection using Keypoint Estimation
+# Tube Orientation Detection with Keypoint Estimation
 
-This repository contains the solution for the machine learning assessment involving the detection of medical tubes and calculating their precise rotation angles from top-down RGB images. 
+Detects tubes in top-down RGB images of a tube rack and estimates each tube's rotation angle. Built as a solution to a machine learning assessment.
 
-##  Architectural Approach
+## Approach
 
-Instead of framing rotation prediction as a complex bounding-box regression problem—which often struggles to generalize on extremely small datasets—this solution utilizes a **Keypoint Detection (Pose Estimation)** pipeline.
+Rather than regressing rotated bounding boxes, which tends to generalise poorly on very small datasets, the model predicts two keypoints per tube and the angle is computed from them.
 
-1. **Detection:** A `YOLOv8n-pose` model was fine-tuned to identify two critical spatial landmarks per tube:
-   * **Keypoint 1:** The central joint of the tube.
-   * **Keypoint 2:** The tip of the alignment tab.
-2. **Mathematical Conversion:** The predicted Cartesian coordinates are subsequently passed through a trigonometric function to reliably extract the orientation angle $\theta$:
+1. **Detection:** a `YOLOv8n-pose` model fine-tuned to find two keypoints per tube:
+   * Keypoint 1: the central joint of the tube
+   * Keypoint 2: the tip of the alignment tab
+2. **Angle:** computed from the two keypoints:
    $$\theta = \arctan2(y_{joint} - y_{tab}, x_{tab} - x_{joint}) \pmod{360}$$
 
-This hybrid approach (Deep Learning for spatial localization + Trigonometry for orientation) ensures mathematical rigidity and prevents the model from blindly "memorizing" angles.
+## Data and evaluation
 
-##  Dataset & Evaluation Setup
+* 70 top-down images of a tube rack
+* 80/20 split: 56 training images, 14 validation images
+* All metrics below are on the validation images only
 
-* **Dataset:** 70 top-down images of a tube rack.
-* **Split Strategy:** To provide honest, real-world metrics, the dataset was strictly split into an **80% Training Set** (56 images) and a **20% Validation Set** (14 images). 
-* The model was evaluated *exclusively* on unseen data.
-
-##  Final Validation Metrics
-
-Despite the highly constrained training volume (56 images), the pipeline achieved highly generalized performance on the validation set:
+## Results (validation set)
 
 | Metric | Score |
 | :--- | :--- |
-| **Precision** | 1.0000 |
-| **Recall** | 1.0000 |
-| **F1 Score** | 1.0000 |
-| **Mean Absolute Angle Error (MAE)** | **10.30 Degrees** |
+| Precision | 1.00 |
+| Recall | 1.00 |
+| F1 score | 1.00 |
+| Mean absolute angle error | 10.30° |
 
-*Note: The 10.30° error variance proves the network is actively predicting spatial coordinates dynamically rather than overfitting to the training distribution.*
+Detection is perfect on this small validation set; angle accuracy is the main thing left to improve. With only 14 validation images, these numbers should be read as indicative.
 
-##  How to Run
+## How to run
 
-1. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
+```bash
+pip install -r requirements.txt
+python 1_data_preparation.py   # build the keypoint dataset and train/validation split
+python 2_train_model.py        # fine-tune YOLOv8n-pose
+python 3_evaluate_model.py     # metrics on the validation set
+```
